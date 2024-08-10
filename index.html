@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #6dd5ed, #2193b0);
+        color: #333;
+      }
+      .box {
+        width: 300px;
+        padding: 20px;
+        text-align: center;
+        margin: auto;
+        margin-top: 50px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        background: #ffffff;
+      }
+      .inputData {
+        margin-bottom: 20px;
+      }
+      .inputField {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .location {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      .temp {
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+      .tempmin_max, .humidity, .wind, .description {
+        font-size: 16px;
+        color: #555;
+      }
+      .forecast {
+        margin-top: 20px;
+      }
+      .forecast-day {
+        border-top: 1px solid #ccc;
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+      .wave-one, .wave-two, .wave-three {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 100%;
+        opacity: 0.7;
+        animation: waveAnimation 5s infinite linear;
+      }
+      .wave-two {
+        background: rgba(255, 255, 255, 0.2);
+        animation-duration: 7s;
+      }
+      .wave-three {
+        background: rgba(255, 255, 255, 0.1);
+        animation-duration: 10s;
+      }
+      @keyframes waveAnimation {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="text/babel">
+
+      const { useState, useEffect } = React;
+
+      const TempData = () => {
+        const [city, setCity] = useState(null);
+        const [forecast, setForecast] = useState([]);
+        const [search, setSearch] = useState("Mumbai");
+
+        useEffect(() => {
+          const fetchApi = async () => {
+            try {
+              const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${search}&units=metric&appid=3ab4d312b9a8965e5a95b6c18c760dba`;
+              const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${search}&units=metric&appid=3ab4d312b9a8965e5a95b6c18c760dba`;
+              
+              const weatherResponse = await axios.get(weatherUrl);
+              const forecastResponse = await axios.get(forecastUrl);
+
+              setCity(weatherResponse.data);
+              setForecast(forecastResponse.data.list);
+            } catch (error) {
+              console.error("Error fetching the weather data", error);
+            }
+          };
+          fetchApi();
+        }, [search]);
+
+        const renderForecast = () => {
+          const dailyForecast = [];
+          for (let i = 0; i < forecast.length; i += 8) {
+            dailyForecast.push(forecast[i]);
+          }
+          return dailyForecast.map((day, index) => (
+            <div key={index} className="forecast-day">
+              <h3>{new Date(day.dt_txt).toLocaleDateString()}</h3>
+              <p>Temp: {day.main.temp}°C</p>
+              <p>Min: {day.main.temp_min}°C | Max: {day.main.temp_max}°C</p>
+              <p>Humidity: {day.main.humidity}%</p>
+              <p>Wind: {day.wind.speed} m/s</p>
+              <p>{day.weather[0].description}</p>
+            </div>
+          ));
+        };
+
+        return (
+          <>
+            <div className="box">
+              <div className="inputData">
+                <input
+                  type="search"
+                  className="inputField"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+              {!city ? (
+                <p>No Data Found</p>
+              ) : (
+                <div className="info">
+                  <h2 className="location"><i className="fa-solid fa-street-view"></i> {city.name}</h2>
+                  <h1 className="temp">{city.main.temp}°C</h1>
+                  <h3 className="tempmin_max">Min: {city.main.temp_min}°C | Max: {city.main.temp_max}°C</h3>
+                  <p className="humidity">Humidity: {city.main.humidity}%</p>
+                  <p className="wind">Wind: {city.wind.speed} m/s</p>
+                  <p className="description">{city.weather[0].description}</p>
+                </div>
+              )}
+              <div className="forecast">
+                <h2>5-Day Forecast</h2>
+                {renderForecast()}
+              </div>
+            </div>
+            <div className="wave-one"></div>
+            <div className="wave-two"></div>
+            <div className="wave-three"></div>
+          </>
+        );
+      }
+
+      const App = () => {
+        return <TempData />;
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+
+    </script>
+  </body>
+</html>
